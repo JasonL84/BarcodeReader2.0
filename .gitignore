@@ -1,0 +1,10 @@
+build/resources/main/client_secret.json
+build/
+.gradle/
+gradlew.bat
+gradlew
+gradle/wrapper/gradle-wrapper.properties
+src/main/resources/client_secret.json
+gradle/wrapper/gradle-wrapper.jar
+credentials/StoredCredential
+.settings/org.eclipse.buildship.core.prefs
