@@ -8,3 +8,4 @@ src/main/resources/client_secret.json
 gradle/wrapper/gradle-wrapper.jar
 credentials/StoredCredential
 .settings/org.eclipse.buildship.core.prefs
+*.class
