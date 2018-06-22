@@ -9,3 +9,4 @@ gradle/wrapper/gradle-wrapper.jar
 credentials/StoredCredential
 .settings/org.eclipse.buildship.core.prefs
 *.class
+src/main/resources/options.properties
