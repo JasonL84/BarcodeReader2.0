@@ -84,6 +84,7 @@ public class Main {
 	private static final List<String> SCOPES = Collections.singletonList(SheetsScopes.SPREADSHEETS);
 	private static ArrayList<Book> books = new ArrayList<Book>();
 	private static Sheets service;
+	private static String range;
 	public static boolean doneLoading = false;
 	public static boolean isClose = false;
 	private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
@@ -103,14 +104,15 @@ public class Main {
 				.build();
 		return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
 	}
-	private static void init(Sheets s) throws IOException {
-		final String RANGE = "Test!B5:G";
-		List<List<Object>> values = s.spreadsheets().values().get("1OArA90Lt5Rgt169X8gk4wvQSmqvzE0PKD1KdNmTxY4o",RANGE).execute().getValues();
+	private static void init(Sheets s,String port) throws IOException {
+		List<List<Object>> values = s.spreadsheets().values().get("1OArA90Lt5Rgt169X8gk4wvQSmqvzE0PKD1KdNmTxY4o",range).execute().getValues();
 		for(List l:values) {
 			books.add(new Book(l.toArray()));
 		}
 		System.out.println("Current Books are:");
 		for(Book b:books) System.out.println(b);
+		UIThread t = new UIThread();
+		t.start(port);
 	}
 	public static String getBook(String bookNum) {
 		for(Book b:books) {
@@ -122,7 +124,6 @@ public class Main {
 	}
 	public static void close() throws IOException{
 		final String spreadsheetId = "1OArA90Lt5Rgt169X8gk4wvQSmqvzE0PKD1KdNmTxY4o";
-		final String range = "Test!B5:G";
 		List<List<Object>> values = new ArrayList<List<Object>>();
 		for(Book b:books) {
 			values.add(b.toList());
@@ -134,25 +135,27 @@ public class Main {
 		System.out.println("Success");
 		System.exit(0);
 	}
-	public static void main(String[] args) throws PortInUseException, IOException, GeneralSecurityException  {		
+	public static void main(String[] args) throws PortInUseException, IOException, GeneralSecurityException, InterruptedException  {		
 
 		final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
 		final String spreadsheetId = "1OArA90Lt5Rgt169X8gk4wvQSmqvzE0PKD1KdNmTxY4o";
 		service = new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
 				.setApplicationName(APPLICATION_NAME)
 				.build();
-		InputStream in = Main.class.getResourceAsStream("options.properties");
+		InputStream in = Main.class.getResourceAsStream("preferences.txt");
 		if(in == null) {
 			firstTimeSetup();
 			while (!doneLoading) {
-			}
+				if(doneLoading) break;
+				Thread.sleep(1000);
+				}
 		}
-		System.out.println("First Time Setup complete");
-		final String range = "Test!A5:E";
+		BufferedReader br = new BufferedReader(new InputStreamReader(in));
+		String[] s = br.readLine().split(",");
+		range = s[0]+"!B5:G";
 
-		init(service);
-		UIThread t = new UIThread();
-		t.start();
+		init(service,s[1]);
+
 		System.out.println("Init complete");
 	}
 	public static void registerBook(String name,String bookId) throws IOException,PortInUseException{
@@ -217,8 +220,6 @@ public class Main {
 		studentNum = null;
 	}
 	public static void firstTimeSetup() throws IOException{
-		File f = new File(".\\src\\main\\resources\\options.properties");
-		f.createNewFile();
 		JFrame frame = new JFrame("First Time Setup");
 		JTextArea sheet = new JTextArea();
 		JLabel sheetLabel = new JLabel("Sheet ID");
@@ -232,10 +233,7 @@ public class Main {
 		JLabel portLabel = new JLabel("Port Reader is attatched to");
 		JLabel title = new JLabel("First time setup");
 		JButton submit = new JButton("Done");
-		List l = new ArrayList<JComponent>(); 
-		l.add(sheet);
-		l.add(portCombo);
-		submit.addActionListener(new SubmitListener(frame,f,l));
+		submit.addActionListener(new SubmitListener(frame,sheet,portCombo));
 		p.setLayout(new BoxLayout(p,BoxLayout.PAGE_AXIS));
 		p.add(title);
 		p.add(sheetLabel);
@@ -253,23 +251,28 @@ class SubmitListener implements ActionListener{
 	JFrame frame;
 	File file;
 	List<JTextComponent> comp;
-	String out = "";
-	public SubmitListener(JFrame f,File fil, List l) throws IOException {
+	String out;
+	JTextArea a;
+	JComboBox c;
+	public SubmitListener(JFrame f,JTextArea a1, JComboBox c1) throws IOException {
 		frame = f;
-		file = fil;
-		comp = l;
+		a = a1;
+		c = c1;
 
 	}
 	@Override
 	public void actionPerformed(ActionEvent e){
+		file = new File(".\\src\\main\\resources\\preferences.txt");
+		System.out.println("Submitting");
 		Main.doneLoading = true;
-		for(JTextComponent c:comp) {
-			out.concat(c.getText());
-		}
 		BufferedWriter br;
 		try {
-			br = new BufferedWriter(new FileWriter(file));
+			out = a.getText()+","+c.getSelectedItem();
+			FileWriter f = new FileWriter(file);
+			br = new BufferedWriter(f);
 			br.write(out);
+			System.out.println("Writing "+out+"to "+file.toString());
+			br.close();
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

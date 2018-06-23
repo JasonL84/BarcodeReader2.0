@@ -31,6 +31,7 @@ class PanelComp extends JPanel{
 	}
 }
 public class UIThread extends Thread{
+	String port;
 	JButton SubmitCO = new JButton("Submit");
 	JButton SubmitCI = new JButton("Submit");
 	JButton SubmitReg = new JButton("Submit");
@@ -39,7 +40,7 @@ public class UIThread extends Thread{
 	PanelComp registerPanel = new PanelComp();
 	JTabbedPane pane = new JTabbedPane();
 	JFrame frame = new JFrame("Test");
-	public void start() {
+	public void start(String s) {
 		SubmitCO.addActionListener(new SubmitListener("Check Out"));
 		checkOutPanel.add(SubmitCO,BorderLayout.SOUTH);
 		SubmitCI.addActionListener(new SubmitListener("Check In"));
@@ -58,12 +59,16 @@ public class UIThread extends Thread{
 		frame.toFront();
 		frame.pack();
 		frame.repaint();
+		port = s;
+		start();
+	}
+	public void start() {
 		run();
 	}
 	public void run() {
 		RXTXPort c = null;
 		try {
-			c = new RXTXPort("COM3");
+			c = new RXTXPort(port);
 		} catch (PortInUseException e) {
 			e.printStackTrace();
 		}
